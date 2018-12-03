@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
+//http://www.xbdev.net/physics/Verlet/index.php
+//http://graphics.stanford.edu/~mdfisher/cloth.html
+//https://github.com/mattatz/unity-verlet-simulator
+//https://gamedevelopment.tutsplus.com/tutorials/simulate-tearable-cloth-and-ragdolls-with-simple-verlet-integration--gamedev-519
+
 public class ClothPlane : MonoBehaviour {
     //Mesh to simulate
     private Mesh plane;
-
-    //Counter for how many frames have been rendered, only used the first three times
-    int frameCount = 0;
 
     //Arrays of vectors for vertices, forces, acceleration and velocity for each point in the grid
     private Vector3[] vertices, Forces, Acceleration, Velocity, Position;
@@ -21,7 +23,12 @@ public class ClothPlane : MonoBehaviour {
     private Vector3 Gravity, Wind;
 
     //Size of the cloth (default 2x2)
-    public int xMax = 2, zMax = 2;    
+    public int xMax = 2, zMax = 2;
+
+    //Number of time chuncks, left over time
+    private int numTimeSteps = 16;
+    private float numTimeStepsSec = 16.0f / 1000.0f;
+    private int leftOverTime = 0;
 
     // Paremeters for cloth simulation
     public float b;                     //Damping   
@@ -137,86 +144,103 @@ public class ClothPlane : MonoBehaviour {
 	
 	//Fixed update is for more physics heavy calculations
 	void FixedUpdate () {
-        //Go through all vertices and calculate the forces
-        for (int i = 0; i < numVerticies; ++i)
+        //Divide elapsed time into chuncks
+        int timeStep = (int)((float)(Time.deltaTime*1000.0f + leftOverTime) / (float) numTimeSteps);
+        Debug.Log(Time.deltaTime * 1000.0f);
+        //Limit the timeStep to prevent freezing
+        timeStep = Mathf.Max(Mathf.Min(timeStep, 5), 1);
+
+        //Store left over time
+        leftOverTime = (int)(Time.deltaTime*1000.0f - (timeStep * numTimeSteps));
+
+        //Divide the calculation into all the timesteps
+        for(int iteration = 0; iteration < timeStep; iteration++)
         {
-            //Lock top row of cloth or top corner of cloth if enabled
-            if ((lockTopRow  &&  i >= numVerticies - (1 + xMax) )|| (lockTopCorner && i == numVerticies - 1))
+            //Go through all vertices and calculate the forces
+            for (int i = 0; i < numVerticies; ++i)
             {
+                //Lock top row of cloth or top corner of cloth if enabled
+                if ((lockTopRow && i >= numVerticies - (1 + xMax)) || (lockTopCorner && i == numVerticies - 1))
+                {
+                    Forces[i] = Vector3.zero;
+                    veryOldPositions[i] = new Vector3(vertices[i].x, vertices[i].y, vertices[i].z);
+                    oldPositions[i] = veryOldPositions[i];
+                    vertices[i] = oldPositions[i];
+                    continue;
+                }
+
+                //Allow left mousebutton to controll top left corner and right mouse button to controll lower left corner if enabled
+                if (mouseInput && (i == numVerticies - (xMax + 1) && Input.GetMouseButton(0)) || (i == 0 && Input.GetMouseButton(1)))
+                {
+                    Forces[i] = Vector3.zero;
+                    Vector3 mousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 25));
+                    veryOldPositions[i] = new Vector3(mousePos.x, mousePos.y, mousePos.z);
+                    oldPositions[i] = veryOldPositions[i];
+                    vertices[i] = oldPositions[i];
+                    continue;
+                }
+
+                //Reset Forces
                 Forces[i] = Vector3.zero;
-                veryOldPositions[i] = new Vector3(vertices[i].x, vertices[i].y, vertices[i].z);
-                oldPositions[i] = veryOldPositions[i];
-                vertices[i] = oldPositions[i];
-                continue;
-            }
 
-            //Allow left mousebutton to controll top left corner and right mouse button to controll lower left corner if enabled
-            if (mouseInput && ( i == numVerticies - (xMax +1) && Input.GetMouseButton(0) ) || (i == 0 && Input.GetMouseButton(1) ))
-            {               
-                Forces[i] = Vector3.zero;
-                Vector3 mousePos = Camera.main.ScreenToWorldPoint(new Vector3( Input.mousePosition.x, Input.mousePosition.y, 25));
-                veryOldPositions[i] = new Vector3(mousePos.x, mousePos.y, mousePos.z);
-                oldPositions[i] = veryOldPositions[i];
-                vertices[i] = oldPositions[i];
-                continue;
-            }
-
-            //Reset Forces
-            Forces[i] = Vector3.zero;
-
-            //Save old position
-            if (frameCount < 2) {
-                veryOldPositions[i] = new Vector3(vertices[i].x, vertices[i].y, vertices[i].z);
-                oldPositions[i] = veryOldPositions[i];
-            }
-            else {
-                veryOldPositions[i] = oldPositions[i];
-                oldPositions[i] = new Vector3(vertices[i].x, vertices[i].y, vertices[i].z);
-            }
-
-            //Depending on the connections calculate the spring and damper forces between theese conections
-            foreach (int connection in Conections[i])
-            {
-                Vector3 Connected = Vector3.zero;
-                //If the connection is to a vertex we already have calculated, the position is in oldPositions 
-                //We dont want to calculate forces depending on the new position we calculated
-                if (connection < i) {
-                    Connected = oldPositions[connection];
+                //Save old position
+                if (Time.frameCount < 2)
+                {
+                    veryOldPositions[i] = new Vector3(vertices[i].x, vertices[i].y, vertices[i].z);
+                    oldPositions[i] = veryOldPositions[i];
                 }
-                //If we have not calculated this vertex before, use its current position
-                else {
-                    Connected = vertices[connection];
+                else
+                {
+                    veryOldPositions[i] = oldPositions[i];
+                    oldPositions[i] = new Vector3(vertices[i].x, vertices[i].y, vertices[i].z);
                 }
 
-                //Check if the connection is diagonal and calculate diagonal spring froces     
-                if ((connection) == i + 1 || (connection) == i - 1 || (connection) == i + (xMax + 1) || (connection) == i - (xMax + 1)) {
-                    Forces[i] += calculateSpring(oldPositions[i], Connected);
+                //Depending on the connections calculate the spring and damper forces between theese conections
+                foreach (int connection in Conections[i])
+                {
+                    Vector3 Connected = Vector3.zero;
+                    //If the connection is to a vertex we already have calculated, the position is in oldPositions 
+                    //We dont want to calculate forces depending on the new position we calculated
+                    if (connection < i)
+                    {
+                        Connected = oldPositions[connection];
+                    }
+                    //If we have not calculated this vertex before, use its current position
+                    else
+                    {
+                        Connected = vertices[connection];
+                    }
+
+                    //Check if the connection is diagonal and calculate diagonal spring froces     
+                    if ((connection) == i + 1 || (connection) == i - 1 || (connection) == i + (xMax + 1) || (connection) == i - (xMax + 1))
+                    {
+                        Forces[i] += calculateSpring(oldPositions[i], Connected);
+                    }
+                    //Diagonal spring
+                    else
+                    {
+                        Forces[i] += calculateSpring(oldPositions[i], Connected, true);
+                    }
+
+                    //Calculate the damper forces
+                    Forces[i] += calculateDamper(oldVelocity[i], oldVelocity[connection]);
                 }
-                //Diagonal spring
-                else {
-                    Forces[i] += calculateSpring(oldPositions[i], Connected, true);
-                }
-                
-                //Calculate the damper forces
-                Forces[i] += calculateDamper(oldVelocity[i], oldVelocity[connection]);
+
+                //Add gravity and wind
+                Forces[i] += Gravity;
+                Forces[i] += Wind * WindVariation * Mathf.Abs(Mathf.Sin(Time.time));
+
+                //Euler method to update the position of the vertex
+                //TODO: Change this to Verlet method instead
+                Vector3 newPos = EulerMethod(i);
+                vertices[i] = newPos;
             }
-
-            //Add gravity and wind
-            Forces[i] += Gravity;
-            Forces[i] += Wind * WindVariation * Mathf.Abs(Mathf.Sin(Time.time));
-
-            //Euler method to update the position of the vertex
-            //TODO: Change this to Verlet method instead
-            Vector3 newPos = EulerMethod(i);
-            vertices[i] = newPos;
         }
+        
 
         //Update the vertices of the mesh
         plane.vertices = vertices;
         vertices = plane.vertices;
-
-        //Only count the first 10 frames
-        if (frameCount < 10) frameCount++;
     }
 
     //Return the damper force in vec3, take in the velocities in vec3
@@ -249,7 +273,7 @@ public class ClothPlane : MonoBehaviour {
     Vector3 EulerMethod(int index)
     {
         //Save old position
-        if (frameCount < 1) {
+        if (Time.frameCount < 1) {
             oldAcceleration[index] = -Forces[index] / m;
             Acceleration[index] = oldAcceleration[index];
         }
@@ -257,9 +281,9 @@ public class ClothPlane : MonoBehaviour {
             oldAcceleration[index] = Acceleration[index];
             Acceleration[index] = -Forces[index] / m;
         }
-        Velocity[index] = oldVelocity[index] + h * Acceleration[index];
         oldVelocity[index] = Velocity[index];
-        Position[index] = 2.0f*oldPositions[index] - veryOldPositions[index] + oldAcceleration[index];
+        Velocity[index] = Position[index] - oldPositions[index];
+        Position[index] = 2.0f*oldPositions[index] - veryOldPositions[index] + numTimeStepsSec* numTimeStepsSec*oldAcceleration[index];
         return Position[index];
     }
 }
