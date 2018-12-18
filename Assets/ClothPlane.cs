@@ -10,7 +10,7 @@ public class ClothPlane : MonoBehaviour {
     //Mesh to simulate
     private Mesh plane;
 
-    //Arrays of vectors for vertices, forces, acceleration and velocity for each point in the grid
+    //Arrays of vectors for vertices, forceC:\Users\ElmQPC\Desktop\Malin\TSBK03 - cloth simulation\TSBK03-Cloth-Simulation\Assets\GridGenerator.css, acceleration and velocity for each point in the grid
     private Vector3[] vertices, Forces, Acceleration, Velocity, Position;
 
     //Arrays for previous positions and velocity for the vertices
@@ -33,13 +33,12 @@ public class ClothPlane : MonoBehaviour {
     // Paremeters for cloth simulation
     public float b;                     //Damping   
     public float l;                     //Length of the vertical and horizontal springs
-    public int k;                       //Spring konstant in Hookes' law
+    public float k;                     //Spring konstant in Hookes' law
     public float kd;                    //Spring konstant in Hookes' law (diagonal springs)
     public float m;                     //Mass of one vertex
-    public float h;                     //Euler step length //TODO: Switch to verlet
-    public float g = 9.82f;             //Gravity acceleration //TODO: Make it constant
-    public float WindForce = 0.0f;      //Wind strength
-    public float WindVariation = 0.1f;  //Wind spread over time //TODO: Change the wind to some noise
+    private float g = 9.8f;             //Gravity acceleration //TODO: Make it constant
+    //public float WindForce = 0.0f;      //Wind strength
+    //public float WindVariation = 0.1f;  //Wind spread over time //TODO: Change the wind to some noise
 
     //Parameters that are calculated
     private int numVerticies;   //Number of vertices in the cloth
@@ -48,8 +47,6 @@ public class ClothPlane : MonoBehaviour {
     //Boolean values to determin the orientation of the cloth, stuck to roof, stuck to mouse, hanging in the top edges
     public bool lockTopRow = false;     //Locks the vertices in the top row to their original positions
     public bool lockTopCorner = false;  //Locks the top right vertex to original position
-    public bool mouseInput = false;     //Allows the cloth to be manupulated with mouse input
- 
     
     //Initialization
     void Start () {
@@ -57,8 +54,8 @@ public class ClothPlane : MonoBehaviour {
         plane = GetComponent<MeshFilter>().mesh;
         vertices = plane.vertices;
         numVerticies = vertices.Length;
-        Gravity = new Vector3(0, m*g, 0);
-        Wind = new Vector3(-WindForce, 0, WindForce);   //TODO: Switch wind to some kind of noise
+        Gravity = new Vector3(0, -m*g, 0);
+        //Wind = new Vector3(-WindForce, 0, WindForce);   //TODO: Switch wind to some kind of noise
 
         //Now we know the size of the cloth, declare all the arrays for this size
         Forces = new Vector3[numVerticies];
@@ -146,7 +143,7 @@ public class ClothPlane : MonoBehaviour {
 	void FixedUpdate () {
         //Divide elapsed time into chuncks
         int timeStep = (int)((float)(Time.deltaTime*1000.0f + leftOverTime) / (float) numTimeSteps);
-        Debug.Log(Time.deltaTime * 1000.0f);
+       
         //Limit the timeStep to prevent freezing
         timeStep = Mathf.Max(Mathf.Min(timeStep, 5), 1);
 
@@ -156,32 +153,23 @@ public class ClothPlane : MonoBehaviour {
         //Divide the calculation into all the timesteps
         for(int iteration = 0; iteration < timeStep; iteration++)
         {
+            //Get the vertices
+            vertices = plane.vertices;
+
             //Go through all vertices and calculate the forces
             for (int i = 0; i < numVerticies; ++i)
             {
+                //Reset Forces
+                Forces[i] = Vector3.zero;
+
                 //Lock top row of cloth or top corner of cloth if enabled
                 if ((lockTopRow && i >= numVerticies - (1 + xMax)) || (lockTopCorner && i == numVerticies - 1))
                 {
-                    Forces[i] = Vector3.zero;
                     veryOldPositions[i] = new Vector3(vertices[i].x, vertices[i].y, vertices[i].z);
                     oldPositions[i] = veryOldPositions[i];
                     vertices[i] = oldPositions[i];
                     continue;
                 }
-
-                //Allow left mousebutton to controll top left corner and right mouse button to controll lower left corner if enabled
-                if (mouseInput && (i == numVerticies - (xMax + 1) && Input.GetMouseButton(0)) || (i == 0 && Input.GetMouseButton(1)))
-                {
-                    Forces[i] = Vector3.zero;
-                    Vector3 mousePos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 25));
-                    veryOldPositions[i] = new Vector3(mousePos.x, mousePos.y, mousePos.z);
-                    oldPositions[i] = veryOldPositions[i];
-                    vertices[i] = oldPositions[i];
-                    continue;
-                }
-
-                //Reset Forces
-                Forces[i] = Vector3.zero;
 
                 //Save old position
                 if (Time.frameCount < 2)
@@ -201,52 +189,35 @@ public class ClothPlane : MonoBehaviour {
                     Vector3 Connected = Vector3.zero;
                     //If the connection is to a vertex we already have calculated, the position is in oldPositions 
                     //We dont want to calculate forces depending on the new position we calculated
-                    if (connection < i)
-                    {
-                        Connected = oldPositions[connection];
-                    }
                     //If we have not calculated this vertex before, use its current position
-                    else
-                    {
-                        Connected = vertices[connection];
-                    }
+                    Connected = (connection < i)? oldPositions[connection] : vertices[connection];
 
                     //Check if the connection is diagonal and calculate diagonal spring froces     
-                    if ((connection) == i + 1 || (connection) == i - 1 || (connection) == i + (xMax + 1) || (connection) == i - (xMax + 1))
-                    {
-                        Forces[i] += calculateSpring(oldPositions[i], Connected);
-                    }
-                    //Diagonal spring
-                    else
-                    {
-                        Forces[i] += calculateSpring(oldPositions[i], Connected, true);
-                    }
+                    bool diagonal = !((connection) == i + 1 || (connection) == i - 1 || (connection) == i + (xMax + 1) || (connection) == i - (xMax + 1));
+                    Forces[i] += calculateSpring(oldPositions[i], Connected, diagonal);
 
                     //Calculate the damper forces
-                    Forces[i] += calculateDamper(oldVelocity[i], oldVelocity[connection]);
+                    //Forces[i] += calculateDamper(oldVelocity[i], oldVelocity[connection]);
                 }
 
                 //Add gravity and wind
                 Forces[i] += Gravity;
-                Forces[i] += Wind * WindVariation * Mathf.Abs(Mathf.Sin(Time.time));
+                //Forces[i] += Wind * WindVariation * Mathf.Abs(Mathf.Sin(Time.time));
 
-                //Euler method to update the position of the vertex
-                //TODO: Change this to Verlet method instead
-                Vector3 newPos = EulerMethod(i);
+                //Verlet method to update the position of the vertex
+                Vector3 newPos = VerletMethod(i);
                 vertices[i] = newPos;
             }
-        }
-        
 
-        //Update the vertices of the mesh
-        plane.vertices = vertices;
-        vertices = plane.vertices;
+            //Update the vertices of the mesh
+            plane.vertices = vertices;
+        }
     }
 
     //Return the damper force in vec3, take in the velocities in vec3
     Vector3 calculateDamper(Vector3 v1, Vector3 v2)
     {
-        return b*(v1 - v2);
+        return -b*(v1 - v2);
     }
 
     //Return the spring force in vec3, take in the position of the vertexes in vec3, pos1 and pos2, bool diagonal if it is a diagonal spring
@@ -262,28 +233,23 @@ public class ClothPlane : MonoBehaviour {
         }
         if (diagonal)
         {
-            return kd*(dl - ld)*(pos1 - pos2)/dl;
+            return -kd*(dl - ld)*(pos1 - pos2)/dl;
         } 
-        return k*(dl - l)*(pos1 - pos2)/dl;
+        return -k*(dl - l)*(pos1 - pos2)/dl;
     }
 
-    //Calculate the position of an vertex via the EulerMethod with a steplength of h
+    //Calculate the position of an vertex via the VerletMethod
     //TODO: Switch to Verlet integration
     //https://gamedevelopment.tutsplus.com/tutorials/simulate-tearable-cloth-and-ragdolls-with-simple-verlet-integration--gamedev-519
-    Vector3 EulerMethod(int index)
+    Vector3 VerletMethod(int index)
     {
-        //Save old position
-        if (Time.frameCount < 1) {
-            oldAcceleration[index] = -Forces[index] / m;
-            Acceleration[index] = oldAcceleration[index];
-        }
-        else {
-            oldAcceleration[index] = Acceleration[index];
-            Acceleration[index] = -Forces[index] / m;
-        }
+        oldAcceleration[index] = Acceleration[index];
+        Acceleration[index] = Forces[index] / m;
+
         oldVelocity[index] = Velocity[index];
+        Position[index] = 2.0f * oldPositions[index] - veryOldPositions[index] + numTimeStepsSec * numTimeStepsSec * Acceleration[index];
         Velocity[index] = Position[index] - oldPositions[index];
-        Position[index] = 2.0f*oldPositions[index] - veryOldPositions[index] + numTimeStepsSec* numTimeStepsSec*oldAcceleration[index];
+
         return Position[index];
     }
 }

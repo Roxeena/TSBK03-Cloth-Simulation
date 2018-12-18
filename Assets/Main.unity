@@ -121,11 +121,10 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 579969485}
-  - component: {fileID: 579969484}
   - component: {fileID: 579969483}
   - component: {fileID: 579969482}
   - component: {fileID: 579969486}
-  - component: {fileID: 579969487}
+  - component: {fileID: 579969484}
   m_Layer: 0
   m_Name: clothGrid
   m_TagString: Untagged
@@ -182,7 +181,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 579969481}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed4e36888291e5b47af5fb84863ec269, type: 3}
+  m_Script: {fileID: 11500000, guid: 38b9848c2ba01ac44b986b9502750909, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   xSize: 10
@@ -217,25 +216,11 @@ MonoBehaviour:
   l: 1
   k: 10
   kd: 1
-  m: 1
-  h: 0.1
-  g: 0.2
+  m: 0.01
   WindForce: 0.3
   WindVariation: 0.2
   lockTopRow: 1
   lockTopCorner: 0
-  mouseInput: 1
---- !u!114 &579969487
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 579969481}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b8101866d00ff2e48bbbe9f822384a3e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1044559452
 GameObject:
   m_ObjectHideFlags: 0
@@ -311,7 +296,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1044559452}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5, y: 3, z: -51.9}
+  m_LocalPosition: {x: 5, y: 3, z: -29.22}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -478,7 +463,6 @@ GameObject:
   - component: {fileID: 1505276406}
   - component: {fileID: 1505276405}
   - component: {fileID: 1505276404}
-  - component: {fileID: 1505276408}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -552,14 +536,3 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1505276408
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1505276403}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d82ae9d9c95bc82428c9765017d0ee6f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

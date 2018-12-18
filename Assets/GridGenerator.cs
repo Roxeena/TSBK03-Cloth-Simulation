@@ -6,7 +6,7 @@
 //GUI
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 
-public class Grid : MonoBehaviour {
+public class GridGenerator : MonoBehaviour {
 
     public int xSize = 1 , ySize = 1; //Size of the grid, num vertices. (default 1x1)
 
