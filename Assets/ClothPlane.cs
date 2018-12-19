@@ -5,6 +5,7 @@ using UnityEngine;
 //http://graphics.stanford.edu/~mdfisher/cloth.html
 //https://github.com/mattatz/unity-verlet-simulator
 //https://gamedevelopment.tutsplus.com/tutorials/simulate-tearable-cloth-and-ragdolls-with-simple-verlet-integration--gamedev-519
+//https://github.com/Fewes/MoS/blob/master/MoS_Cloth/Assets/VeryLett.cs
 
 public class ClothPlane : MonoBehaviour {
     //Mesh to simulate
@@ -22,7 +23,7 @@ public class ClothPlane : MonoBehaviour {
     //External forces to bring more life into the simulation
     private Vector3 Gravity, Wind;
 
-    //Size of the cloth (default 2x2)
+    //numCells of the cloth (default 2x2)
     public int xMax = 2, zMax = 2;
 
     //Number of time chuncks, left over time
@@ -72,7 +73,7 @@ public class ClothPlane : MonoBehaviour {
         ld = Mathf.Sqrt(2 * l * l);
 
         //Loop over all vertices to add all the connections between them
-        int row = xMax + 1; //Size of one side (Assumes a square cloth, no rectangle)
+        int row = xMax + 1; //numCells of one side (Assumes a square cloth, no rectangle)
         for (int v = 0; v < numVerticies; ++v)
         {
             //Assumes this structure for a 3x3 plane
@@ -197,7 +198,7 @@ public class ClothPlane : MonoBehaviour {
                     Forces[i] += calculateSpring(oldPositions[i], Connected, diagonal);
 
                     //Calculate the damper forces
-                    //Forces[i] += calculateDamper(oldVelocity[i], oldVelocity[connection]);
+                    //Forces[i] += calculateDamper(oldVelocity[i], oldVelocity[connection], oldPositions[i], Connected);
                 }
 
                 //Add gravity and wind
@@ -215,9 +216,11 @@ public class ClothPlane : MonoBehaviour {
     }
 
     //Return the damper force in vec3, take in the velocities in vec3
-    Vector3 calculateDamper(Vector3 v1, Vector3 v2)
+    Vector3 calculateDamper(Vector3 v1, Vector3 v2, Vector3 pos1, Vector3 pos2)
     {
-        return -b*(v1 - v2);
+        Vector3 r = pos2 - pos1;
+        Vector3 v12 = v1 + v2;
+        return -b* Vector3.Project(v12, r.normalized);
     }
 
     //Return the spring force in vec3, take in the position of the vertexes in vec3, pos1 and pos2, bool diagonal if it is a diagonal spring
@@ -247,8 +250,8 @@ public class ClothPlane : MonoBehaviour {
         Acceleration[index] = Forces[index] / m;
 
         oldVelocity[index] = Velocity[index];
-        Position[index] = 2.0f * oldPositions[index] - veryOldPositions[index] + numTimeStepsSec * numTimeStepsSec * Acceleration[index];
-        Velocity[index] = Position[index] - oldPositions[index];
+        Position[index] = 1.99f * oldPositions[index] - 0.99f*veryOldPositions[index] + numTimeStepsSec * numTimeStepsSec * Acceleration[index];
+        Velocity[index] = oldVelocity[index] + 0.5f * numTimeStepsSec * (Acceleration[index] + oldAcceleration[index]);
 
         return Position[index];
     }
