@@ -27,6 +27,10 @@ public class ClothPlane : MonoBehaviour {
     public int numCells = 2;    //Assumes square cloth
     public float Size = 1.0f;
 
+    [Range(0.0f, 1.0f)]
+    public float friction = 0.9f;
+    public SphereCollider sphere;
+
     //Number of time chuncks, left over time
     private int numTimeSteps = 16;
     private float numTimeStepsSec = 16.0f / 1000.0f;
@@ -40,17 +44,20 @@ public class ClothPlane : MonoBehaviour {
     private float g = 9.8f;             //Gravity acceleration //TODO: Make it constant
     //public float WindForce = 0.0f;      //Wind strength
     //public float WindVariation = 0.1f;  //Wind spread over time //TODO: Change the wind to some noise
+    private Transform transform;
 
     //Parameters that are calculated
     private int numVerticies;   //Number of vertices in the cloth
     private float ld;           //Length of diagonal springs
     private float l;             //Length of the vertical and horizontal springs
-    private Transform transform;
 
     //Boolean values to determin the orientation of the cloth, stuck to roof, stuck to mouse, hanging in the top edges
     public bool lockTopRow = false;     //Locks the vertices in the top row to their original positions
     public bool lockTopCorner = false;  //Locks the top right vertex to original position
     public bool lockBothTopCorners = false;
+
+    private bool collision = false;
+    private bool locked = false;
     
     //Initialization
     void Start () {
@@ -63,8 +70,8 @@ public class ClothPlane : MonoBehaviour {
         numVerticies = vertices.Length;
         Gravity = new Vector3(0, -m*g, 0);
         //Wind = new Vector3(-WindForce, 0, WindForce);   //TODO: Switch wind to some kind of noise
-        transform = GetComponent<Transform>();
         //Now we know the size of the cloth, declare all the arrays for this size
+        transform = GetComponent<Transform>();
         totalVelocity = new Vector3[numVerticies];
         Forces = new Vector3[numVerticies];
         Acceleration = new Vector3[numVerticies];
@@ -171,6 +178,7 @@ public class ClothPlane : MonoBehaviour {
                 //Reset totalVelocity
                 totalVelocity[i] = Vector3.zero;
                 Forces[i] = Vector3.zero;
+                locked = false;
 
                 //Lock top row of cloth or top corner of cloth if enabled
                 if ((lockTopRow && i <= numCells) || (lockTopCorner && i == numCells) || (lockBothTopCorners && (i == 0 || i == numCells)))
@@ -178,6 +186,7 @@ public class ClothPlane : MonoBehaviour {
                     veryOldPositions[i] = new Vector3(vertices[i].x, vertices[i].y, vertices[i].z);
                     oldPositions[i] = veryOldPositions[i];
                     vertices[i] = oldPositions[i];
+                    locked = true;
                     continue;
                 }
 
@@ -193,14 +202,7 @@ public class ClothPlane : MonoBehaviour {
                     oldPositions[i] = new Vector3(vertices[i].x, vertices[i].y, vertices[i].z);
                 }
 
-                //Check for collisions
-                //Floor
-                if(transform.TransformPoint(oldPositions[i]).y <= 0.0f)
-                {
-                    Debug.Log(transform.InverseTransformPoint(Vector3.zero).y + 0.1f);
-                    oldPositions[i].y = transform.InverseTransformPoint(Vector3.zero).y + 0.1f;
-                    Forces[i] += Vector3.up * 0.1f;
-                }
+                
 
                 //Depending on the connections calculate the spring and damper forces between theese conections
                 foreach (int connection in Conections[i])
@@ -217,8 +219,9 @@ public class ClothPlane : MonoBehaviour {
                 }
 
                 //Add gravity and wind
-                totalVelocity[i] += Physics.gravity * 0.1f* numTimeStepsSec;
-                Forces[i] += Physics.gravity * 0.1f;
+                Forces[i] += transform.InverseTransformDirection(Physics.gravity) * 0.1f;
+
+                totalVelocity[i] += transform.InverseTransformDirection(Physics.gravity) * 0.1f* numTimeStepsSec;
                 //totalVelocity[i] += Wind * WindVariation * Mathf.Abs(Mathf.Sin(Time.time));
 
                 //Verlet method to update the position of the vertex
@@ -246,14 +249,22 @@ public class ClothPlane : MonoBehaviour {
             dl = 0.001f;
 
         Vector3 F = (diagonal) ? -kd*(dl - ld)*(pos1 - pos2)/dl  : -k*(dl - l)*(pos1 - pos2)/dl;
-        Forces[i] += F;
 
         //Calculate damping
         //Velocity total
         Vector3 v12 = v1 + v2;
         //Vector3 dampF = -b *(v1 - v2);
         Vector3 dampF = Vector3.zero;
-        Forces[i] += dampF;
+
+        if(collision)
+        {
+            //float e = 0.5f;
+            //Vector3 impuls = -(1 + e)* (Vector3.Scale(r.normalized, (v1 - v2))/(1.0f/m + 1.0f/1.0f));
+            Forces[i] += (F + dampF) * friction ;
+        }
+            
+        else
+            Forces[i] += F + dampF;
 
         //Add the velocity up for later use
         Vector3 springDisplacement = F / m * numTimeStepsSec;
@@ -266,11 +277,34 @@ public class ClothPlane : MonoBehaviour {
     //https://gamedevelopment.tutsplus.com/tutorials/simulate-tearable-cloth-and-ragdolls-with-simple-verlet-integration--gamedev-519
     Vector3 VerletMethod(int index)
     {
+        collision = false;
         oldAcceleration[index] = Acceleration[index];
         Acceleration[index] = Forces[index] / m;
         oldVelocity[index] = Velocity[index];
         Velocity[index] = oldVelocity[index] + totalVelocity[index];
         Position[index] = 1.99f * oldPositions[index] - 0.99f * veryOldPositions[index] + numTimeStepsSec * numTimeStepsSec * Acceleration[index];
+
+        //Check for collisions
+        if (!locked)
+        {
+            //Floor
+            if (transform.TransformPoint(Position[index]).y <= 0.05f)
+            {
+                Position[index].y = transform.InverseTransformPoint(Vector3.zero).y + 0.05f;
+                collision = true;
+            }
+
+            //Sphere
+            float radius = sphere.radius * sphere.transform.lossyScale.x;
+            Vector3 collisionNormal = transform.TransformPoint(Position[index]) - sphere.transform.position;
+            if (collisionNormal.magnitude <= radius*1.3f)
+            {
+                collision = true;
+                Position[index] = transform.InverseTransformPoint(sphere.transform.position + collisionNormal.normalized * radius*1.3f);
+            }
+        }
+        else
+            collision = false;
 
         return Position[index];
     }

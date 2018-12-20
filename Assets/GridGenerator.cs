@@ -26,7 +26,7 @@ public class GridGenerator : MonoBehaviour {
         
         //Create a new mesh for the MeshFilter component
         GetComponent<MeshFilter>().mesh = mesh = new Mesh();
-        mesh.name = "Procedural Grid";
+        mesh.name = "Procedural Cloth";
 
         //Create and calculate the vertices, texture coordinates and tangents
         vertices = new Vector3[(numCells + 1) * (numCells + 1)];  //why + 1?
