@@ -9,7 +9,8 @@ public class Controller : MonoBehaviour {
     private float lookX, lookY;
     private float moveFB, moveLR, fly;
     private Camera cam;
-    
+    private bool stop = false;
+
     // Use this for initialization
 	void Start () {
         cam = Camera.main;
@@ -21,7 +22,17 @@ public class Controller : MonoBehaviour {
 
         //Turn off controller when hit escape
         if (Input.GetKey(KeyCode.Escape))
+        {
             Application.Quit();
+            return;
+        }
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            stop = (stop) ? false : true;
+        }
+        if (stop)
+            return;
+            
 
         //Movement
         moveFB = Input.GetAxis("Vertical") * speed * Time.deltaTime;
