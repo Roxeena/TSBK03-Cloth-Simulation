@@ -1,15 +1,14 @@
 ﻿using UnityEngine;
 
-//Put me on an empty game object!
-//Tutorial on: http://catlikecoding.com/unity/tutorials/procedural-grid/
+//Inspiration from: http://catlikecoding.com/unity/tutorials/procedural-grid/
 
 //GUI
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 
 public class GridGenerator : MonoBehaviour {
 
-    public int numCells = 1; //numCells of the grid, num vertices. (default 1x1), Square always
-    public float Size = 1.0f;    
+    public int numCells = 10; //numCells of the grid, num vertices. Square always
+    public float Size = 5.0f;    
 
     private Vector3[] vertices; //Vector for all vertices
     private Mesh mesh; //Rendered mesh
@@ -35,12 +34,9 @@ public class GridGenerator : MonoBehaviour {
         Vector4 tangent = new Vector4(1f, 0f, 0f, -1f);
         for (int i = 0, y = 0; y <= numCells; y++) {
             for (int x = 0; x <= numCells; x++, i++) {
-                Debug.Log(x % 2);
+                //Force cloth to be set in a wave pattern
                 float wave = (x % 2 == 0) ? -0.1f: 0.1f;
                 Vector3 pos = origin + stepX * (float)x - stepY * (float)y + stepZ * wave;
-                /*float posX = (Size / numCells) * (float)x;
-                float posY = (Size / numCells) * (float)y;
-                float posZ = (x % 2 > 0) ? -0.1f : 0.1f;*/
                 
                 vertices[i] = transform.InverseTransformPoint(pos);
                 uv[i] = new Vector2((float)x / (float)numCells, (float)y / (float)numCells);

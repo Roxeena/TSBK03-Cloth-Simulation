@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657868, g: 0.49641263, b: 0.57481706, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -161,7 +161,7 @@ GameObject:
   - component: {fileID: 4882771}
   - component: {fileID: 4882770}
   m_Layer: 0
-  m_Name: HangingCloth3
+  m_Name: ClothOnHook
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -199,6 +199,8 @@ MonoBehaviour:
   k: 20
   kd: 10
   m: 0.01
+  WindForce: 0.1
+  windSpeed: 1
   lockTopRow: 0
   lockTopCorner: 1
   lockBothTopCorners: 0
@@ -268,7 +270,7 @@ GameObject:
   - component: {fileID: 13899051}
   - component: {fileID: 13899050}
   m_Layer: 0
-  m_Name: Cube (3)
+  m_Name: WallRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -352,7 +354,7 @@ GameObject:
   - component: {fileID: 116903932}
   - component: {fileID: 116903931}
   m_Layer: 0
-  m_Name: Plane (1)
+  m_Name: RoofOutside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -477,6 +479,8 @@ MonoBehaviour:
   k: 20
   kd: 10
   m: 0.01
+  WindForce: 0.1
+  windSpeed: 1
   lockTopRow: 1
   lockTopCorner: 0
   lockBothTopCorners: 0
@@ -547,7 +551,7 @@ GameObject:
   - component: {fileID: 579969486}
   - component: {fileID: 579969484}
   m_Layer: 0
-  m_Name: HangingCloth
+  m_Name: Flag
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -639,6 +643,8 @@ MonoBehaviour:
   k: 20
   kd: 10
   m: 0.01
+  WindForce: 0.1
+  windSpeed: 1
   lockTopRow: 1
   lockTopCorner: 0
   lockBothTopCorners: 0
@@ -891,6 +897,8 @@ MonoBehaviour:
   k: 20
   kd: 10
   m: 0.01
+  WindForce: 0.1
+  windSpeed: 1
   lockTopRow: 0
   lockTopCorner: 0
   lockBothTopCorners: 1
@@ -958,7 +966,7 @@ GameObject:
   - component: {fileID: 1198645901}
   - component: {fileID: 1198645900}
   m_Layer: 0
-  m_Name: Point light (2)
+  m_Name: RightFront
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1037,7 +1045,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1260813490}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.19, y: 2.42, z: -6.8314066}
+  m_LocalPosition: {x: 2.9, y: 2.47, z: -11.15}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1044559456}
@@ -1083,7 +1091,7 @@ GameObject:
   - component: {fileID: 1285703690}
   - component: {fileID: 1285703689}
   m_Layer: 0
-  m_Name: Cube (4)
+  m_Name: WallFront
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1165,7 +1173,7 @@ GameObject:
   - component: {fileID: 1447417151}
   - component: {fileID: 1447417150}
   m_Layer: 0
-  m_Name: Directional Light
+  m_Name: Sun
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1316,7 +1324,7 @@ GameObject:
   - component: {fileID: 1529304770}
   - component: {fileID: 1529304769}
   m_Layer: 0
-  m_Name: Plane
+  m_Name: Floor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1402,7 +1410,7 @@ GameObject:
   - component: {fileID: 1585122051}
   - component: {fileID: 1585122050}
   m_Layer: 0
-  m_Name: Cube (1)
+  m_Name: WallBack
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1486,7 +1494,7 @@ GameObject:
   - component: {fileID: 1614976961}
   - component: {fileID: 1614976960}
   m_Layer: 0
-  m_Name: Cube (2)
+  m_Name: WallLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1571,7 +1579,7 @@ GameObject:
   - component: {fileID: 1691516822}
   - component: {fileID: 1691516821}
   m_Layer: 0
-  m_Name: HangingCloth2
+  m_Name: HangingCloth
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1609,6 +1617,8 @@ MonoBehaviour:
   k: 20
   kd: 10
   m: 0.01
+  WindForce: 0.1
+  windSpeed: 1
   lockTopRow: 0
   lockTopCorner: 0
   lockBothTopCorners: 1
@@ -1676,7 +1686,7 @@ GameObject:
   - component: {fileID: 1790085465}
   - component: {fileID: 1790085464}
   m_Layer: 0
-  m_Name: Point light (1)
+  m_Name: LeftBack
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1743,7 +1753,7 @@ GameObject:
   - component: {fileID: 1794805683}
   - component: {fileID: 1794805682}
   m_Layer: 0
-  m_Name: Plane (1)
+  m_Name: RoofInside
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1827,7 +1837,7 @@ GameObject:
   - component: {fileID: 2020959274}
   - component: {fileID: 2020959273}
   m_Layer: 0
-  m_Name: Point light
+  m_Name: RightBack
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1892,7 +1902,7 @@ GameObject:
   - component: {fileID: 2077917599}
   - component: {fileID: 2077917598}
   m_Layer: 0
-  m_Name: Point light (3)
+  m_Name: LeftFront
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
